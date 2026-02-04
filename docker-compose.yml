@@ -36,14 +36,14 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      FRONTEND_URL: https://converter.duckdns.org
-      BACKEND_URL: https://api-converter.duckdns.org
+      FRONTEND_URL: https://convert.encurt.be
+      BACKEND_URL: https://api.convert.encurt.be
     depends_on:
       mysql:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.converter-api.rule=Host(`api-converter.duckdns.org`)"
+      - "traefik.http.routers.converter-api.rule=Host(`api.convert.encurt.be`)"
       - "traefik.http.routers.converter-api.entrypoints=websecure"
       - "traefik.http.routers.converter-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.converter-api.loadbalancer.server.port=3000"
@@ -53,7 +53,7 @@ services:
       context: ./frontend/convert
       dockerfile: Dockerfile.prod
       args:
-        NEXT_PUBLIC_API_URL: https://api-converter.duckdns.org
+        NEXT_PUBLIC_API_URL: https://api.convert.encurt.be
     container_name: converter-frontend
     restart: unless-stopped
     networks:
@@ -62,7 +62,7 @@ services:
       - backend
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.converter.rule=Host(`converter.duckdns.org`)"
+      - "traefik.http.routers.converter.rule=Host(`convert.encurt.be`)"
       - "traefik.http.routers.converter.entrypoints=websecure"
       - "traefik.http.routers.converter.tls.certresolver=letsencrypt"
       - "traefik.http.services.converter.loadbalancer.server.port=3000"
