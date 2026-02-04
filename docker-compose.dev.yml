@@ -1,0 +1,82 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: converter-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - backend-uploads:/app/src/uploads
+      - backend-pdfs:/app/src/pdfs
+      - backend-docs:/app/src/docs
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=mysql
+      - DB_USER=converter
+      - DB_PASSWORD=converter123
+      - DB_NAME=converter_db
+      - SESSION_SECRET=converter-session-secret-key-2024
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FRONTEND_URL=http://localhost:3001
+      - BACKEND_URL=http://localhost:3000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - converter-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend/convert
+      dockerfile: Dockerfile
+    container_name: converter-frontend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./frontend/convert:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - converter-network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: converter-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123
+      - MYSQL_DATABASE=converter_db
+      - MYSQL_USER=converter
+      - MYSQL_PASSWORD=converter123
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - converter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+volumes:
+  backend-uploads:
+  backend-pdfs:
+  backend-docs:
+  mysql-data:
+
+networks:
+  converter-network:
+    driver: bridge

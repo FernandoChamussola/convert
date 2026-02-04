@@ -1,0 +1,75 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: converter-mysql
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: converter_db
+      MYSQL_USER: converter
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: converter-backend
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    environment:
+      NODE_ENV: production
+      DB_HOST: mysql
+      DB_USER: converter
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: converter_db
+      SESSION_SECRET: ${SESSION_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      FRONTEND_URL: https://converter.duckdns.org
+      BACKEND_URL: https://api-converter.duckdns.org
+    depends_on:
+      mysql:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.converter-api.rule=Host(`api-converter.duckdns.org`)"
+      - "traefik.http.routers.converter-api.entrypoints=websecure"
+      - "traefik.http.routers.converter-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.converter-api.loadbalancer.server.port=3000"
+
+  frontend:
+    build:
+      context: ./frontend/convert
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: https://api-converter.duckdns.org
+    container_name: converter-frontend
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.converter.rule=Host(`converter.duckdns.org`)"
+      - "traefik.http.routers.converter.entrypoints=websecure"
+      - "traefik.http.routers.converter.tls.certresolver=letsencrypt"
+      - "traefik.http.services.converter.loadbalancer.server.port=3000"
+
+volumes:
+  mysql-data:
+
+networks:
+  traefik-public:
+    external: true

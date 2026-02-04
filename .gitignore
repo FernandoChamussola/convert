@@ -1,0 +1,35 @@
+# Node modules
+node_modules/
+npm-debug.log
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Uploads e arquivos temporários
+backend/src/uploads/*
+backend/src/pdfs/*
+backend/src/docs/*
+
+# Manter diretórios mas ignorar conteúdo
+!backend/src/uploads/.gitkeep
+!backend/src/pdfs/.gitkeep
+!backend/src/docs/.gitkeep
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
