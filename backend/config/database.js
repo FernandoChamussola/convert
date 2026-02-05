@@ -10,14 +10,39 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// Testar conexão
-pool.getConnection()
-  .then(connection => {
+// Inicializar base de dados e criar tabelas se não existirem
+async function initDatabase() {
+  try {
+    const connection = await pool.getConnection();
     console.log('MySQL connected successfully');
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        google_id VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        picture VARCHAR(500),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        session_id VARCHAR(128) PRIMARY KEY,
+        expires INT UNSIGNED NOT NULL,
+        data MEDIUMTEXT
+      )
+    `);
+
+    console.log('Database tables verified');
     connection.release();
-  })
-  .catch(err => {
-    console.error('MySQL connection error:', err);
-  });
+  } catch (err) {
+    console.error('MySQL initialization error:', err);
+  }
+}
+
+initDatabase();
 
 export default pool;
