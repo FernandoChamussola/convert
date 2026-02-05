@@ -20,6 +20,9 @@ import { requireAuth } from "./middleware/auth.js"
 
 const app = express()
 
+// Confiar no proxy reverso (Traefik) para cookies secure funcionarem
+app.set('trust proxy', 1)
+
 // CORS configurado para permitir credenciais
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3001',
@@ -57,7 +60,7 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 horas
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+    sameSite: 'lax'
   }
 }))
 
